@@ -1,0 +1,87 @@
+<html>
+<head>
+
+</head>
+
+<body>
+  
+  <script type="text/javascript" src="{{ url_for('static',filename ='matter.js') }}"></script>
+    <script>
+// module aliases
+var Engine = Matter.Engine,
+    Render = Matter.Render,
+    Runner = Matter.Runner,
+    Bodies = Matter.Bodies,
+    Composite = Matter.Composite;
+
+// create an engine
+var engine = Engine.create();
+
+// create a renderer
+var render = Render.create({
+    element: document.body,
+    engine: engine,
+    options :{
+        width :1600,
+        heighr:800,
+        wireframes:false
+    }
+});
+
+// create two boxes and a ground
+let platform = Matter.Bodies.rectangle(1200, 500, 300, 20, { isStatic: true });
+let stack = Matter.Composites.stack(1100, 270, 4, 4, 0, 0, function(x, y) {
+    return Matter.Bodies.polygon(x, y, 8, 30); 
+});
+
+let mouse = Matter.Mouse.create(render.canvas);
+let mouseConstraint = Matter.MouseConstraint.create(engine, {
+  mouse: mouse,
+  constraint: {
+    render: {visible: false}
+  }
+});
+render.mouse = mouse;
+
+var ground = Bodies.rectangle(1200, 500, 300, 20, { isStatic: true });
+
+let ball = Matter.Bodies.circle(400, 400,20);
+let sling = Matter.Constraint.create({ 
+      pointA: { x: 400, y: 400 }, 
+      bodyB: ball, 
+      stiffness: 0.05
+  });
+
+  let firing = false;
+Matter.Events.on(mouseConstraint,'enddrag', function(e) {
+  if(e.body === ball) firing = true;
+});
+Matter.Events.on(engine,'afterUpdate', function() {
+  if (firing && Math.abs(ball.position.x-400) < 20 && Math.abs(ball.position.y-400) < 20) {
+      ball = Matter.Bodies.circle(300, 600, 20);
+      Matter.World.add(engine.world, ball);
+      sling.bodyB = ball;
+      firing = false;
+  }
+});
+
+
+// add all of the bodies to the world
+Composite.add(engine.world, [stack,ball,sling, mouseConstraint, ground]);
+
+// run the renderer
+Render.run(render);
+
+// create runner
+var runner = Runner.create();
+
+// run the engine
+Runner.run(runner, engine);
+        
+    </script>
+
+
+
+</body>
+
+</html>
